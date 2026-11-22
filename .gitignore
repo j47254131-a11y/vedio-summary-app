@@ -1,0 +1,12 @@
+# OS & 에디터 임시 파일
+.DS_Store
+Thumbs.db
+*.log
+
+# Node / 로컬 환경 (필요 시)
+node_modules/
+.env
+.env.local
+
+# Vercel 로컬 캐시
+.vercel
