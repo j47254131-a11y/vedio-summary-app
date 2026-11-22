@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>유튜브 AI 요약 & 카드뉴스 생성기</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --text-main: #1e2433;
+      --text-sub: #5c657d;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --accent-red: #ef4444;
+      --border: #e2e8f0;
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.65;
+      padding: 24px 16px 64px;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-sub);
+      font-size: 0.98rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    label span.hint {
+      font-weight: 400;
+      font-size: 0.82rem;
+      color: var(--text-sub);
+    }
+
+    input[type="url"] {
+      width: 100%;
+      padding: 13px 16px;
+      font-size: 0.96rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #fafbfe;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+
+    .preview-box {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      align-items: center;
+      gap: 16px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .preview-box.active {
+      display: flex;
+    }
+
+    .preview-box img {
+      width: 150px;
+      height: 86px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .preview-info {
+      overflow: hidden;
+    }
+
+    .preview-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #059669;
+      background: #ecfdf5;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+
+    .preview-url {
+      font-size: 0.86rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .url-error-text {
+      display: none;
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--accent-red);
+      font-weight: 500;
+    }
+
+    .url-error-text.active {
+      display: block;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 18px;
+      padding: 15px 20px;
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(79, 70, 229, 0.36);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading-box {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .loading-box.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid var(--primary-light);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      animation: spin 0.85s linear infinite;
+    }
+
+    .loading-box p {
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 1.02rem;
+    }
+
+    .loading-box span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.86rem;
+      color: var(--text-sub);
+    }
+
+    .alert-box {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      font-size: 0.94rem;
+    }
+
+    .alert-box.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .alert-box strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .results-section {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .results-section.active {
+      display: flex;
+      animation: fadeIn 0.35s ease;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-btn {
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: #e0e7ff;
+    }
+
+    .easy-summary-text {
+      font-size: 1rem;
+      color: var(--text-main);
+      white-space: pre-line;
+    }
+
+    .analogy-box {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      font-size: 0.94rem;
+    }
+
+    .analogy-box strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #92400e;
+    }
+
+    .takeaway-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .takeaway-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #f8fafc;
+      padding: 13px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 0.97rem;
+      font-weight: 500;
+    }
+
+    .takeaway-num {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .cardnews-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .slide-card {
+      position: relative;
+      border-radius: 16px;
+      padding: 22px 20px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 250px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+
+    .slide-card:nth-child(1) { background: linear-gradient(145deg, #312e81, #4f46e5); }
+    .slide-card:nth-child(2) { background: linear-gradient(145deg, #0f766e, #0d9488); }
+    .slide-card:nth-child(3) { background: linear-gradient(145deg, #1e3a8a, #2563eb); }
+    .slide-card:nth-child(4) { background: linear-gradient(145deg, #7c2d12, #ea580c); }
+
+    .slide-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .slide-badge {
+      background: rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .slide-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.38;
+      margin-bottom: 10px;
+      word-break: keep-all;
+    }
+
+    .slide-body {
+      font-size: 0.93rem;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.93);
+      margin-bottom: 16px;
+      word-break: keep-all;
+    }
+
+    .slide-visual-tip {
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .slide-visual-tip strong {
+      display: block;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 2px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 700px) {
+      header h1 { font-size: 1.48rem; }
+      .cardnews-grid { grid-template-columns: 1fr; }
+      .preview-box { flex-direction: column; align-items: flex-start; }
+      .preview-box img { width: 100%; height: 170px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Gemini AI Video Analyzer</span>
+      <h1>유튜브 AI 쉬운 요약 & 카드뉴스 생성기</h1>
+      <p>유튜브 링크만 붙여넣으면 영상을 분석해 이해하기 쉬운 요약과 4장짜리 카드뉴스를 만들어 드립니다.</p>
+    </header>
+
+    <section class="panel">
+      <div class="form-group">
+        <label for="youtubeUrlInput">
+          <span>🎬 유튜브 링크 (URL)</span>
+          <span class="hint">일반 영상, 단축 링크(youtu.be), Shorts 지원</span>
+        </label>
+        <input
+          type="url"
+          id="youtubeUrlInput"
+          placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+        />
+        <p class="url-error-text" id="urlErrorText">올바른 유튜브 영상 주소를 입력해 주세요.</p>
+
+        <div class="preview-box" id="previewBox">
+          <img id="thumbnailImg" src="" alt="유튜브 영상 썸네일 미리보기" />
+          <div class="preview-info">
+            <div class="preview-status">✓ 유효한 유튜브 링크가 확인되었습니다</div>
+            <div class="preview-url" id="previewUrlText"></div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="submit-btn" id="analyzeBtn">
+        ✨ 유튜브 분석 & 카드뉴스 생성하기
+      </button>
+    </section>
+
+    <div class="loading-box" id="loadingBox">
+      <div class="spinner"></div>
+      <p>Gemini가 유튜브 영상을 보고 내용을 분석 중입니다...</p>
+      <span>영상 길이에 따라 10~30초 정도 걸릴 수 있습니다.</span>
+    </div>
+
+    <div class="alert-box" id="alertBox">
+      <strong id="alertTitle">오류가 발생했습니다</strong>
+      <span id="alertMessage"></span>
+    </div>
+
+    <section class="results-section" id="resultsSection">
+      <article class="result-card">
+        <div class="card-header">
+          <h2 class="card-title">💡 이해하기 쉬운 내용 요약</h2>
+          <button type="button" class="copy-btn" data-copy="easy">텍스트 복사</button>
+        </div>
+        <div class="easy-summary-text" id="easySummaryContent"></div>
+        <div class="analogy-box" id="analogyBox">
+          <strong>🎈 초등학생도 이해하는 쉬운 비유</strong>
+          <span id="analogyContent"></span>
+        </div>
+      </article>
+
+      <article class="result-card">
+        <div class="card-header">
+          <h2 class="card-title">📌 핵심 포인트 3줄 요약</h2>
+          <button type="button" class="copy-btn" data-copy="takeaways">텍스트 복사</button>
+        </div>
+        <ul class="takeaway-list" id="takeawayList"></ul>
+      </article>
+
+      <article class="result-card">
+        <div class="card-header">
+          <h2 class="card-title">📱 유튜브 내용을 잘 보여주는 카드뉴스 (4장 구성)</h2>
+          <button type="button" class="copy-btn" data-copy="cardnews">전체 구성 복사</button>
+        </div>
+        <div class="cardnews-grid" id="cardnewsGrid"></div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const youtubeUrlInput = document.getElementById("youtubeUrlInput");
+    const urlErrorText = document.getElementById("urlErrorText");
+    const previewBox = document.getElementById("previewBox");
+    const thumbnailImg = document.getElementById("thumbnailImg");
+    const previewUrlText = document.getElementById("previewUrlText");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+
+    const loadingBox = document.getElementById("loadingBox");
+    const alertBox = document.getElementById("alertBox");
+    const alertTitle = document.getElementById("alertTitle");
+    const alertMessage = document.getElementById("alertMessage");
+    const resultsSection = document.getElementById("resultsSection");
+
+    const easySummaryContent = document.getElementById("easySummaryContent");
+    const analogyContent = document.getElementById("analogyContent");
+    const takeawayList = document.getElementById("takeawayList");
+    const cardnewsGrid = document.getElementById("cardnewsGrid");
+
+    let latestResultData = null;
+
+    function extractYouTubeVideoId(urlString) {
+      if (!urlString) return null;
+      const trimmed = urlString.trim();
+      try {
+        const parsed = new URL(trimmed);
+        const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+        if (host === "youtu.be") {
+          const id = parsed.pathname.split("/").filter(Boolean)[0];
+          return isValidVideoId(id) ? id : null;
+        }
+
+        if (host === "youtube.com" || host === "m.youtube.com") {
+          if (parsed.pathname === "/watch") {
+            const id = parsed.searchParams.get("v");
+            return isValidVideoId(id) ? id : null;
+          }
+          const parts = parsed.pathname.split("/").filter(Boolean);
+          if (parts.length >= 2 && ["shorts", "embed", "live", "v"].includes(parts[0])) {
+            return isValidVideoId(parts[1]) ? parts[1] : null;
+          }
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
+    }
+
+    function isValidVideoId(id) {
+      return typeof id === "string" && /^[a-zA-Z0-9_-]{11}$/.test(id);
+    }
+
+    function getNormalizedYouTubeUrl(videoId) {
+      return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+
+    youtubeUrlInput.addEventListener("input", () => {
+      const rawValue = youtubeUrlInput.value.trim();
+      if (!rawValue) {
+        previewBox.classList.remove("active");
+        urlErrorText.classList.remove("active");
+        return;
+      }
+
+      const videoId = extractYouTubeVideoId(rawValue);
+      if (videoId) {
+        const normalizedUrl = getNormalizedYouTubeUrl(videoId);
+        thumbnailImg.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        previewUrlText.textContent = normalizedUrl;
+        previewBox.classList.add("active");
+        urlErrorText.classList.remove("active");
+      } else {
+        previewBox.classList.remove("active");
+        urlErrorText.classList.add("active");
+      }
+    });
+
+    function showAlert(title, message) {
+      alertTitle.textContent = title;
+      alertMessage.textContent = message;
+      alertBox.classList.add("active");
+    }
+
+    function hideAlert() {
+      alertBox.classList.remove("active");
+    }
+
+    analyzeBtn.addEventListener("click", async () => {
+      hideAlert();
+
+      const rawUrl = youtubeUrlInput.value.trim();
+      const videoId = extractYouTubeVideoId(rawUrl);
+
+      if (!videoId) {
+        urlErrorText.classList.add("active");
+        showAlert("유튜브 링크를 확인해 주세요", "올바른 유튜브 영상 URL(youtube.com/watch?v=..., youtu.be/..., shorts 등)을 입력해 주세요.");
+        youtubeUrlInput.focus();
+        return;
+      }
+
+      const youtubeUrl = getNormalizedYouTubeUrl(videoId);
+
+      analyzeBtn.disabled = true;
+      resultsSection.classList.remove("active");
+      loadingBox.classList.add("active");
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ youtubeUrl })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || "영상 분석 중 오류가 발생했습니다.");
+        }
+
+        latestResultData = data;
+        renderResults(data);
+      } catch (error) {
+        showAlert("영상 분석 실패", error.message || "요청 처리 중 오류가 발생했습니다.");
+      } finally {
+        loadingBox.classList.remove("active");
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    function renderResults(result) {
+      easySummaryContent.textContent = result.easySummary || "요약 내용이 없습니다.";
+      analogyContent.textContent = result.analogy || "비유 설명이 없습니다.";
+
+      takeawayList.innerHTML = "";
+      const takeaways = Array.isArray(result.takeaways) ? result.takeaways.slice(0, 3) : [];
+      takeaways.forEach((item, index) => {
+        const li = document.createElement("li");
+        const numBadge = document.createElement("span");
+        numBadge.className = "takeaway-num";
+        numBadge.textContent = index + 1;
+
+        const textSpan = document.createElement("span");
+        textSpan.textContent = item;
+
+        li.appendChild(numBadge);
+        li.appendChild(textSpan);
+        takeawayList.appendChild(li);
+      });
+
+      cardnewsGrid.innerHTML = "";
+      const slides = Array.isArray(result.cardNews) ? result.cardNews.slice(0, 4) : [];
+      slides.forEach((slide, idx) => {
+        const slideEl = document.createElement("div");
+        slideEl.className = "slide-card";
+
+        const topDiv = document.createElement("div");
+        topDiv.className = "slide-top";
+
+        const badge = document.createElement("span");
+        badge.className = "slide-badge";
+        badge.textContent = `SLIDE ${slide.slideNumber || idx + 1} / 4`;
+        topDiv.appendChild(badge);
+
+        const contentDiv = document.createElement("div");
+        const titleEl = document.createElement("h3");
+        titleEl.className = "slide-title";
+        titleEl.textContent = slide.title || "";
+
+        const bodyEl = document.createElement("p");
+        bodyEl.className = "slide-body";
+        bodyEl.textContent = slide.body || "";
+
+        contentDiv.appendChild(titleEl);
+        contentDiv.appendChild(bodyEl);
+
+        const visualDiv = document.createElement("div");
+        visualDiv.className = "slide-visual-tip";
+
+        const visualLabel = document.createElement("strong");
+        visualLabel.textContent = "🎨 추천 시각·이미지 아이디어";
+
+        const visualText = document.createElement("span");
+        visualText.textContent = slide.visualIdea || "";
+
+        visualDiv.appendChild(visualLabel);
+        visualDiv.appendChild(visualText);
+
+        slideEl.appendChild(topDiv);
+        slideEl.appendChild(contentDiv);
+        slideEl.appendChild(visualDiv);
+
+        cardnewsGrid.appendChild(slideEl);
+      });
+
+      resultsSection.classList.add("active");
+      resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    document.querySelectorAll(".copy-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!latestResultData) return;
+        const type = btn.dataset.copy;
+        let textToCopy = "";
+
+        if (type === "easy") {
+          textToCopy = `[이해하기 쉬운 내용 요약]\n${latestResultData.easySummary}\n\n[초등학생도 이해하는 쉬운 비유]\n${latestResultData.analogy}`;
+        } else if (type === "takeaways") {
+          textToCopy = `[핵심 포인트 3줄 요약]\n` + (latestResultData.takeaways || []).map((t, i) => `${i + 1}. ${t}`).join("\n");
+        } else if (type === "cardnews") {
+          textToCopy = `[SNS 카드뉴스 4장 구성안]\n\n` + (latestResultData.cardNews || [])
+            .map((s, i) => `[슬라이드 ${s.slideNumber || i + 1}] ${s.title}\n- 본문: ${s.body}\n- 시각화 아이디어: ${s.visualIdea}`)
+            .join("\n\n");
+        }
+
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          const originalText = btn.textContent;
+          btn.textContent = "복사 완료!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1500);
+        } catch (err) {
+          alert("클립보드 복사에 실패했습니다.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
