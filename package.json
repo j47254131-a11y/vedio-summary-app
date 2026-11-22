@@ -1,0 +1,9 @@
+{
+  "name": "youtube-ai-cardnews",
+  "version": "1.0.0",
+  "private": true,
+  "description": "YouTube URL summary and 4-slide card news generator using Gemini API",
+  "scripts": {
+    "dev": "npx serve public"
+  }
+}
