@@ -3,21 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>유튜브 AI 요약 & 카드뉴스 생성기</title>
+  <title>유튜브 AI 요약 & 카드뉴스 생성기 (핸드드로운 에디션)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #f4f6fb;
-      --surface: #ffffff;
-      --text-main: #1e2433;
-      --text-sub: #5c657d;
-      --primary: #4f46e5;
-      --primary-light: #eef2ff;
-      --accent-red: #ef4444;
-      --border: #e2e8f0;
-      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
-      --shadow-md: 0 10px 25px rgba(15, 23, 42, 0.08);
-      --radius-lg: 18px;
-      --radius-md: 12px;
+      --ink: #2b2623;
+      --ink-soft: #5c534c;
+      --paper: #fffdf7;
+      --paper-warm: #faf4e6;
+      --dot-color: rgba(43, 38, 35, 0.08);
+      --highlighter-yellow: #ffe066;
+      --highlighter-mint: #96f2d7;
+      --highlighter-pink: #ffadd2;
+      --highlighter-sky: #a5d8ff;
+      --highlighter-peach: #ffc078;
+      --danger: #e03131;
+
+      /* 손으로 그린 듯 살짝 비대칭인 테두리 곡선 */
+      --sketch-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+      --sketch-radius-sm: 18px 6px 20px 8px / 8px 20px 6px 18px;
+      --sketch-shadow: 4px 4px 0px var(--ink);
+      --sketch-shadow-lg: 6px 6px 0px var(--ink);
     }
 
     * {
@@ -27,11 +35,13 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-      background-color: var(--bg);
-      color: var(--text-main);
-      line-height: 1.65;
-      padding: 24px 16px 64px;
+      font-family: "Gowun Dodum", "Gaegu", -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--paper-warm);
+      background-image: radial-gradient(var(--dot-color) 1.3px, transparent 1.3px);
+      background-size: 20px 20px;
+      color: var(--ink);
+      line-height: 1.7;
+      padding: 28px 16px 72px;
     }
 
     .container {
@@ -39,40 +49,53 @@
       margin: 0 auto;
     }
 
+    /* 헤더 */
     header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 30px;
     }
 
     .badge {
       display: inline-block;
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 0.82rem;
+      font-family: "Gaegu", cursive;
+      font-size: 1.05rem;
       font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 999px;
-      margin-bottom: 10px;
+      color: var(--ink);
+      background: var(--highlighter-mint);
+      border: 2px solid var(--ink);
+      border-radius: var(--sketch-radius-sm);
+      padding: 3px 14px;
+      box-shadow: 2px 2px 0px var(--ink);
+      transform: rotate(-1.5deg);
+      margin-bottom: 12px;
     }
 
     header h1 {
-      font-size: 1.85rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
+      font-family: "Gaegu", cursive;
+      font-size: 2.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      display: inline-block;
+      background: linear-gradient(transparent 62%, var(--highlighter-yellow) 62%);
+      padding: 0 8px;
     }
 
     header p {
-      color: var(--text-sub);
-      font-size: 0.98rem;
+      color: var(--ink-soft);
+      font-size: 1rem;
+      margin-top: 6px;
     }
 
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      box-shadow: var(--shadow-md);
+    /* 손그림 노트/카드 패널 */
+    .panel,
+    .result-card,
+    .loading-box {
+      background: var(--paper);
+      border: 2.5px solid var(--ink);
+      border-radius: var(--sketch-radius);
+      padding: 26px 24px;
+      box-shadow: var(--sketch-shadow-lg);
       margin-bottom: 24px;
     }
 
@@ -82,48 +105,55 @@
 
     label {
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      align-items: baseline;
       justify-content: space-between;
-      font-size: 0.92rem;
+      gap: 8px;
+      font-family: "Gaegu", cursive;
+      font-size: 1.35rem;
       font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-main);
+      margin-bottom: 10px;
+      color: var(--ink);
     }
 
     label span.hint {
+      font-family: "Gowun Dodum", sans-serif;
       font-weight: 400;
-      font-size: 0.82rem;
-      color: var(--text-sub);
+      font-size: 0.84rem;
+      color: var(--ink-soft);
     }
 
     input[type="url"] {
       width: 100%;
       padding: 13px 16px;
-      font-size: 0.96rem;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-md);
-      background: #fafbfe;
-      color: var(--text-main);
-      transition: all 0.2s ease;
+      font-family: "Gowun Dodum", sans-serif;
+      font-size: 1rem;
+      border: 2px solid var(--ink);
+      border-radius: var(--sketch-radius-sm);
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: inset 2px 2px 0px rgba(43, 38, 35, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     input:focus {
       outline: none;
-      border-color: var(--primary);
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+      background: #fffef9;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--highlighter-yellow);
     }
 
+    /* 썸네일 미리보기 */
     .preview-box {
       display: none;
-      margin-top: 14px;
+      margin-top: 16px;
       padding: 14px;
-      border-radius: var(--radius-md);
-      background: #f8fafc;
-      border: 1px solid var(--border);
+      border-radius: var(--sketch-radius-sm);
+      background: #fffdf5;
+      border: 2px dashed var(--ink);
       align-items: center;
       gap: 16px;
-      animation: fadeIn 0.25s ease;
+      animation: wiggleIn 0.25s ease;
     }
 
     .preview-box.active {
@@ -131,11 +161,13 @@
     }
 
     .preview-box img {
-      width: 150px;
-      height: 86px;
+      width: 156px;
+      height: 90px;
       object-fit: cover;
-      border-radius: 8px;
-      background: #e2e8f0;
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0px var(--ink);
+      transform: rotate(-1.5deg);
       flex-shrink: 0;
     }
 
@@ -147,18 +179,20 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.82rem;
+      font-family: "Gaegu", cursive;
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #059669;
-      background: #ecfdf5;
-      padding: 3px 10px;
-      border-radius: 999px;
+      color: var(--ink);
+      background: var(--highlighter-mint);
+      border: 1.5px solid var(--ink);
+      padding: 2px 10px;
+      border-radius: 12px;
       margin-bottom: 6px;
     }
 
     .preview-url {
-      font-size: 0.86rem;
-      color: var(--text-sub);
+      font-size: 0.88rem;
+      color: var(--ink-soft);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -167,118 +201,120 @@
     .url-error-text {
       display: none;
       margin-top: 8px;
-      font-size: 0.85rem;
-      color: var(--accent-red);
-      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--danger);
+      font-weight: 700;
     }
 
     .url-error-text.active {
       display: block;
     }
 
+    /* 손그림 버튼 */
     .submit-btn {
       width: 100%;
-      margin-top: 18px;
-      padding: 15px 20px;
-      font-size: 1.02rem;
+      margin-top: 20px;
+      padding: 14px 20px;
+      font-family: "Gaegu", cursive;
+      font-size: 1.4rem;
       font-weight: 700;
-      color: #ffffff;
-      background: linear-gradient(135deg, #4f46e5, #6366f1);
-      border: none;
-      border-radius: var(--radius-md);
+      color: var(--ink);
+      background: var(--highlighter-yellow);
+      border: 2.5px solid var(--ink);
+      border-radius: var(--sketch-radius-sm);
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
-      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+      box-shadow: var(--sketch-shadow);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
 
     .submit-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 22px rgba(79, 70, 229, 0.36);
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0px var(--ink);
+      background: #ffd43b;
+    }
+
+    .submit-btn:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px var(--ink);
     }
 
     .submit-btn:disabled {
-      opacity: 0.6;
+      opacity: 0.65;
       cursor: not-allowed;
-      transform: none;
     }
 
+    /* 로딩 상태 */
     .loading-box {
       display: none;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 36px 20px;
       text-align: center;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 24px;
+      padding: 36px 20px;
     }
 
     .loading-box.active {
       display: block;
-      animation: fadeIn 0.25s ease;
+      animation: wiggleIn 0.25s ease;
     }
 
-    .spinner {
-      width: 42px;
-      height: 42px;
-      border: 4px solid var(--primary-light);
-      border-top-color: var(--primary);
+    .doodle-loader {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--ink);
+      border-top-color: var(--highlighter-pink);
+      border-right-color: var(--highlighter-mint);
       border-radius: 50%;
       margin: 0 auto 14px;
-      animation: spin 0.85s linear infinite;
+      animation: spin 1s linear infinite;
     }
 
     .loading-box p {
+      font-family: "Gaegu", cursive;
+      font-size: 1.4rem;
       font-weight: 700;
-      color: var(--text-main);
-      font-size: 1.02rem;
+      color: var(--ink);
     }
 
     .loading-box span {
       display: block;
       margin-top: 4px;
-      font-size: 0.86rem;
-      color: var(--text-sub);
+      font-size: 0.9rem;
+      color: var(--ink-soft);
     }
 
+    /* 에러 알림 */
     .alert-box {
       display: none;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
-      border-radius: var(--radius-md);
+      background: #fff5f5;
+      border: 2.5px solid var(--danger);
+      border-radius: var(--sketch-radius-sm);
+      color: #9b1c1c;
       padding: 16px 18px;
       margin-bottom: 24px;
-      font-size: 0.94rem;
+      box-shadow: 3px 3px 0px var(--danger);
+      font-size: 0.95rem;
     }
 
     .alert-box.active {
       display: block;
-      animation: fadeIn 0.25s ease;
+      animation: wiggleIn 0.25s ease;
     }
 
     .alert-box strong {
+      font-family: "Gaegu", cursive;
+      font-size: 1.25rem;
       display: block;
       margin-bottom: 4px;
     }
 
+    /* 결과 카드들 */
     .results-section {
       display: none;
       flex-direction: column;
-      gap: 20px;
+      gap: 22px;
     }
 
     .results-section.active {
       display: flex;
-      animation: fadeIn 0.35s ease;
-    }
-
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      box-shadow: var(--shadow-md);
+      animation: wiggleIn 0.3s ease;
     }
 
     .card-header {
@@ -288,55 +324,68 @@
       gap: 12px;
       margin-bottom: 16px;
       padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 2px dashed rgba(43, 38, 35, 0.25);
     }
 
     .card-title {
-      font-size: 1.18rem;
-      font-weight: 800;
+      font-family: "Gaegu", cursive;
+      font-size: 1.5rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .copy-btn {
-      padding: 6px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--primary);
-      background: var(--primary-light);
-      border: none;
-      border-radius: 8px;
+      padding: 6px 13px;
+      font-family: "Gaegu", cursive;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: #ffffff;
+      border: 2px solid var(--ink);
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.15s ease;
+      box-shadow: 2px 2px 0px var(--ink);
+      transition: transform 0.1s ease;
     }
 
     .copy-btn:hover {
-      background: #e0e7ff;
+      background: var(--highlighter-sky);
+      transform: translate(-1px, -1px);
     }
 
+    .copy-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px var(--ink);
+    }
+
+    /* 카드 1: 쉬운 말 해설 & 비유 메모 */
     .easy-summary-text {
       font-size: 1rem;
-      color: var(--text-main);
+      color: var(--ink);
       white-space: pre-line;
     }
 
     .analogy-box {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: var(--radius-md);
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #78350f;
-      font-size: 0.94rem;
+      margin-top: 16px;
+      padding: 15px 18px;
+      border-radius: var(--sketch-radius-sm);
+      background: #fff9db;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0px var(--highlighter-yellow);
+      color: var(--ink);
+      font-size: 0.96rem;
     }
 
     .analogy-box strong {
+      font-family: "Gaegu", cursive;
+      font-size: 1.22rem;
       display: block;
       margin-bottom: 4px;
-      color: #92400e;
     }
 
+    /* 카드 2: 핵심 3줄 요약 */
     .takeaway-list {
       list-style: none;
       display: flex;
@@ -348,100 +397,117 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      background: #f8fafc;
+      background: #ffffff;
       padding: 13px 16px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-      font-size: 0.97rem;
-      font-weight: 500;
+      border-radius: var(--sketch-radius-sm);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0px var(--ink);
+      font-size: 0.98rem;
     }
 
     .takeaway-num {
       flex-shrink: 0;
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
-      background: var(--primary);
-      color: #ffffff;
-      font-size: 0.82rem;
-      font-weight: 800;
+      background: var(--highlighter-pink);
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      font-family: "Gaegu", cursive;
+      font-size: 1.1rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-top: 1px;
     }
 
+    /* 카드 3: 핸드드로운 카드뉴스 4장 */
     .cardnews-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+      gap: 18px;
     }
 
     .slide-card {
       position: relative;
-      border-radius: 16px;
-      padding: 22px 20px;
-      color: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 18px 8px 20px 10px / 10px 20px 8px 18px;
+      padding: 20px 18px;
+      color: var(--ink);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 250px;
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-      overflow: hidden;
+      min-height: 255px;
+      box-shadow: 4px 4px 0px var(--ink);
     }
 
-    .slide-card:nth-child(1) { background: linear-gradient(145deg, #312e81, #4f46e5); }
-    .slide-card:nth-child(2) { background: linear-gradient(145deg, #0f766e, #0d9488); }
-    .slide-card:nth-child(3) { background: linear-gradient(145deg, #1e3a8a, #2563eb); }
-    .slide-card:nth-child(4) { background: linear-gradient(145deg, #7c2d12, #ea580c); }
+    .slide-card:nth-child(1) {
+      background: #fff3bf;
+      transform: rotate(-0.8deg);
+    }
+    .slide-card:nth-child(2) {
+      background: #d3f9d8;
+      transform: rotate(0.8deg);
+    }
+    .slide-card:nth-child(3) {
+      background: #d0ebff;
+      transform: rotate(0.6deg);
+    }
+    .slide-card:nth-child(4) {
+      background: #ffe3e3;
+      transform: rotate(-0.7deg);
+    }
 
     .slide-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .slide-badge {
-      background: rgba(255, 255, 255, 0.22);
-      backdrop-filter: blur(4px);
-      padding: 4px 10px;
+      background: #ffffff;
+      border: 2px solid var(--ink);
+      padding: 2px 10px;
       border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
+      font-family: "Gaegu", cursive;
+      font-size: 1rem;
+      font-weight: 700;
+      box-shadow: 2px 2px 0px var(--ink);
     }
 
     .slide-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      line-height: 1.38;
-      margin-bottom: 10px;
+      font-family: "Gaegu", cursive;
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 8px;
       word-break: keep-all;
     }
 
     .slide-body {
-      font-size: 0.93rem;
+      font-size: 0.94rem;
       line-height: 1.55;
-      color: rgba(255, 255, 255, 0.93);
-      margin-bottom: 16px;
+      color: var(--ink);
+      margin-bottom: 14px;
       word-break: keep-all;
     }
 
     .slide-visual-tip {
-      background: rgba(0, 0, 0, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1.5px dashed var(--ink);
       border-radius: 10px;
       padding: 10px 12px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       line-height: 1.45;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
     }
 
     .slide-visual-tip strong {
+      font-family: "Gaegu", cursive;
+      font-size: 1rem;
       display: block;
-      font-size: 0.76rem;
-      text-transform: uppercase;
-      opacity: 0.85;
       margin-bottom: 2px;
     }
 
@@ -449,62 +515,63 @@
       to { transform: rotate(360deg); }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes wiggleIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     @media (max-width: 700px) {
-      header h1 { font-size: 1.48rem; }
+      header h1 { font-size: 1.9rem; }
       .cardnews-grid { grid-template-columns: 1fr; }
+      .slide-card { transform: none !important; }
       .preview-box { flex-direction: column; align-items: flex-start; }
-      .preview-box img { width: 100%; height: 170px; }
+      .preview-box img { width: 100%; height: 170px; transform: none; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <span class="badge">Gemini AI Video Analyzer</span>
-      <h1>유튜브 AI 쉬운 요약 & 카드뉴스 생성기</h1>
-      <p>유튜브 링크만 붙여넣으면 영상을 분석해 이해하기 쉬운 요약과 4장짜리 카드뉴스를 만들어 드립니다.</p>
+      <span class="badge">✏️ 손그림 노트 에디션</span><br />
+      <h1>유튜브 AI 쉬운 요약 & 카드뉴스</h1>
+      <p>유튜브 링크만 슥- 붙여넣으면 내용을 쏙쏙 요약하고 손그림 느낌의 4컷 카드뉴스를 그려드려요!</p>
     </header>
 
     <section class="panel">
       <div class="form-group">
         <label for="youtubeUrlInput">
           <span>🎬 유튜브 링크 (URL)</span>
-          <span class="hint">일반 영상, 단축 링크(youtu.be), Shorts 지원</span>
+          <span class="hint">일반 영상 · 단축 링크(youtu.be) · Shorts</span>
         </label>
         <input
           type="url"
           id="youtubeUrlInput"
           placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
         />
-        <p class="url-error-text" id="urlErrorText">올바른 유튜브 영상 주소를 입력해 주세요.</p>
+        <p class="url-error-text" id="urlErrorText">앗! 올바른 유튜브 영상 주소를 입력해 주세요.</p>
 
         <div class="preview-box" id="previewBox">
           <img id="thumbnailImg" src="" alt="유튜브 영상 썸네일 미리보기" />
           <div class="preview-info">
-            <div class="preview-status">✓ 유효한 유튜브 링크가 확인되었습니다</div>
+            <div class="preview-status">✓ 링크 확인 완료!</div>
             <div class="preview-url" id="previewUrlText"></div>
           </div>
         </div>
       </div>
 
       <button type="button" class="submit-btn" id="analyzeBtn">
-        ✨ 유튜브 분석 & 카드뉴스 생성하기
+        🖍️ 유튜브 분석 & 카드뉴스 만들기
       </button>
     </section>
 
     <div class="loading-box" id="loadingBox">
-      <div class="spinner"></div>
-      <p>Gemini가 유튜브 영상을 보고 내용을 분석 중입니다...</p>
-      <span>영상 길이에 따라 10~30초 정도 걸릴 수 있습니다.</span>
+      <div class="doodle-loader"></div>
+      <p>Gemini가 영상을 보고 노트에 열심히 정리 중이에요...</p>
+      <span>영상 길이에 따라 10~30초 정도 걸릴 수 있어요!</span>
     </div>
 
     <div class="alert-box" id="alertBox">
-      <strong id="alertTitle">오류가 발생했습니다</strong>
+      <strong id="alertTitle">잠깐, 문제가 생겼어요!</strong>
       <span id="alertMessage"></span>
     </div>
 
@@ -512,7 +579,7 @@
       <article class="result-card">
         <div class="card-header">
           <h2 class="card-title">💡 이해하기 쉬운 내용 요약</h2>
-          <button type="button" class="copy-btn" data-copy="easy">텍스트 복사</button>
+          <button type="button" class="copy-btn" data-copy="easy">복사하기</button>
         </div>
         <div class="easy-summary-text" id="easySummaryContent"></div>
         <div class="analogy-box" id="analogyBox">
@@ -524,15 +591,15 @@
       <article class="result-card">
         <div class="card-header">
           <h2 class="card-title">📌 핵심 포인트 3줄 요약</h2>
-          <button type="button" class="copy-btn" data-copy="takeaways">텍스트 복사</button>
+          <button type="button" class="copy-btn" data-copy="takeaways">복사하기</button>
         </div>
         <ul class="takeaway-list" id="takeawayList"></ul>
       </article>
 
       <article class="result-card">
         <div class="card-header">
-          <h2 class="card-title">📱 유튜브 내용을 잘 보여주는 카드뉴스 (4장 구성)</h2>
-          <button type="button" class="copy-btn" data-copy="cardnews">전체 구성 복사</button>
+          <h2 class="card-title">📱 손그림 카드뉴스 구성안 (4장)</h2>
+          <button type="button" class="copy-btn" data-copy="cardnews">전체 복사</button>
         </div>
         <div class="cardnews-grid" id="cardnewsGrid"></div>
       </article>
@@ -700,7 +767,7 @@
 
         const badge = document.createElement("span");
         badge.className = "slide-badge";
-        badge.textContent = `SLIDE ${slide.slideNumber || idx + 1} / 4`;
+        badge.textContent = `컷 ${slide.slideNumber || idx + 1} / 4`;
         topDiv.appendChild(badge);
 
         const contentDiv = document.createElement("div");
@@ -719,7 +786,7 @@
         visualDiv.className = "slide-visual-tip";
 
         const visualLabel = document.createElement("strong");
-        visualLabel.textContent = "🎨 추천 시각·이미지 아이디어";
+        visualLabel.textContent = "✏️ 그림·연출 아이디어";
 
         const visualText = document.createElement("span");
         visualText.textContent = slide.visualIdea || "";
